@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buku Servis & Penggantian Part Motor</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #059669;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; }
+
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 16px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    .status-sync { font-size: 11px; margin-top: 4px; opacity: 0.8; }
+
+    .container { max-width: 540px; margin: 0 auto; padding: 12px; }
+
+    .dashboard-card {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .total-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .total-val { font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+
+    .filter-group { margin-top: 12px; }
+    .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    select, input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 4px;
+      background: white;
+    }
+
+    .session-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .session-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+    .motor-badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0284c7;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .session-total { font-size: 16px; font-weight: 700; color: var(--success); }
+    .session-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .part-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+    .part-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .part-table td { padding: 6px 0; border-bottom: 1px solid #f8fafc; }
+    .part-table td.qty-col { text-align: center; color: var(--text-muted); width: 45px; }
+    .part-table td.price-col { text-align: right; font-weight: 600; width: 100px; }
+
+    .session-note {
+      font-size: 12px;
+      color: #475569;
+      background: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+    .btn-action {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-edit { color: var(--primary); border-color: #bfdbfe; background: #eff6ff; }
+    .btn-delete { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 30;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 540px;
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 16px 16px 0 0;
+      padding: 18px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-header h2 { font-size: 16px; font-weight: 700; }
+    .close-btn { background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer; }
+
+    .form-item { margin-bottom: 10px; }
+    .form-item label { display: block; font-size: 12px; font-weight: 600; color: #334155; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .items-container {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+    .items-container-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .items-container-header span { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .btn-add-item {
+      background: #e0e7ff;
+      color: #3730a3;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .item-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 100px 30px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .btn-del-item {
+      background: #fee2e2;
+      color: var(--danger);
+      border: none;
+      width: 28px;
+      height: 36px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .empty-state { text-align: center; color: var(--text-muted); padding: 40px 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Catatan Servis & Ganti Part Motor</h1>
+    <div id="syncStatus" class="status-sync">Memuat data online...</div>
+  </header>
+
+  <div class="container">
+    <div class="dashboard-card">
+      <div class="total-label">Total Pengeluaran Servis</div>
+      <div class="total-val" id="totalBiaya">Rp 0</div>
+      
+      <div class="filter-group">
+        <label for="filterMotor">Filter Motor:</label>
+        <select id="filterMotor" onchange="renderData()">
+          <option value="ALL">Semua Motor</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="serviceList"></div>
+  </div>
+
+  <button class="fab" onclick="openModal()">+</button>
+
+  <div class="modal-overlay" id="formModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Tambah Riwayat Servis</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+
+      <form id="recordForm">
+        <input type="hidden" id="editIndex" value="-1">
+
+        <div class="form-item">
+          <label>Merek & Tipe Motor</label>
+          <input type="text" id="tipeMotor" placeholder="Cth: Suzuki Address FI, Honda Spacy" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-item">
+            <label>Tanggal Servis</label>
+            <input type="date" id="tglServis" required>
+          </div>
+          <div class="form-item">
+            <label>Odometer (km)</label>
+            <input type="number" id="kilometer" placeholder="Cth: 24500">
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label>Tempat / Bengkel (Opsional)</label>
+          <input type="text" id="bengkel" placeholder="Cth: Bengkel Resmi, Servis Mandiri">
+        </div>
+
+        <div class="items-container">
+          <div class="items-container-header">
+            <span>Rincian Part / Jasa</span>
+            <button type="button" class="btn-add-item" onclick="addItemRow()">+ Tambah Item</button>
+          </div>
+          <div id="itemsWrapper"></div>
+        </div>
+
+        <div class="form-item" style="margin-top: 10px;">
+          <label>Catatan Tambahan (Opsional)</label>
+          <textarea id="catatan" rows="2" placeholder="Cth: Ganti oli gardan, busi, cek roller"></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnSave">Simpan Sesi Servis</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    const API_URL = "<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buku Servis & Penggantian Part Motor</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #059669;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; }
+
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 16px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    .status-sync { font-size: 11px; margin-top: 4px; opacity: 0.8; }
+
+    .container { max-width: 540px; margin: 0 auto; padding: 12px; }
+
+    .dashboard-card {
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .total-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .total-val { font-size: 22px; font-weight: 700; color: var(--primary); margin-top: 4px; }
+
+    .filter-group { margin-top: 12px; }
+    .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    select, input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 4px;
+      background: white;
+    }
+
+    .session-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .session-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 8px;
+    }
+    .motor-badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0284c7;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+    .session-total { font-size: 16px; font-weight: 700; color: var(--success); }
+    .session-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .part-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+    .part-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .part-table td { padding: 6px 0; border-bottom: 1px solid #f8fafc; }
+    .part-table td.qty-col { text-align: center; color: var(--text-muted); width: 45px; }
+    .part-table td.price-col { text-align: right; font-weight: 600; width: 100px; }
+
+    .session-note {
+      font-size: 12px;
+      color: #475569;
+      background: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+    .btn-action {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-edit { color: var(--primary); border-color: #bfdbfe; background: #eff6ff; }
+    .btn-delete { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 30;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 540px;
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 16px 16px 0 0;
+      padding: 18px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-header h2 { font-size: 16px; font-weight: 700; }
+    .close-btn { background: none; border: none; font-size: 22px; color: var(--text-muted); cursor: pointer; }
+
+    .form-item { margin-bottom: 10px; }
+    .form-item label { display: block; font-size: 12px; font-weight: 600; color: #334155; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .items-container {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+    .items-container-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .items-container-header span { font-size: 13px; font-weight: 700; color: #1e293b; }
+    .btn-add-item {
+      background: #e0e7ff;
+      color: #3730a3;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .item-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 100px 30px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .btn-del-item {
+      background: #fee2e2;
+      color: var(--danger);
+      border: none;
+      width: 28px;
+      height: 36px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .empty-state { text-align: center; color: var(--text-muted); padding: 40px 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Catatan Servis & Ganti Part Motor</h1>
+    <div id="syncStatus" class="status-sync">Memuat data online...</div>
+  </header>
+
+  <div class="container">
+    <div class="dashboard-card">
+      <div class="total-label">Total Pengeluaran Servis</div>
+      <div class="total-val" id="totalBiaya">Rp 0</div>
+      
+      <div class="filter-group">
+        <label for="filterMotor">Filter Motor:</label>
+        <select id="filterMotor" onchange="renderData()">
+          <option value="ALL">Semua Motor</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="serviceList"></div>
+  </div>
+
+  <button class="fab" onclick="openModal()">+</button>
+
+  <div class="modal-overlay" id="formModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Tambah Riwayat Servis</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+
+      <form id="recordForm">
+        <input type="hidden" id="editIndex" value="-1">
+
+        <div class="form-item">
+          <label>Merek & Tipe Motor</label>
+          <input type="text" id="tipeMotor" placeholder="Cth: Suzuki Address FI, Honda Spacy" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-item">
+            <label>Tanggal Servis</label>
+            <input type="date" id="tglServis" required>
+          </div>
+          <div class="form-item">
+            <label>Odometer (km)</label>
+            <input type="number" id="kilometer" placeholder="Cth: 24500">
+          </div>
+        </div>
+
+        <div class="form-item">
+          <label>Tempat / Bengkel (Opsional)</label>
+          <input type="text" id="bengkel" placeholder="Cth: Bengkel Resmi, Servis Mandiri">
+        </div>
+
+        <div class="items-container">
+          <div class="items-container-header">
+            <span>Rincian Part / Jasa</span>
+            <button type="button" class="btn-add-item" onclick="addItemRow()">+ Tambah Item</button>
+          </div>
+          <div id="itemsWrapper"></div>
+        </div>
+
+        <div class="form-item" style="margin-top: 10px;">
+          <label>Catatan Tambahan (Opsional)</label>
+          <textarea id="catatan" rows="2" placeholder="Cth: Ganti oli gardan, busi, cek roller"></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnSave">Simpan Sesi Servis</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    const API_URL = "ISI_DENGAN_URL_WEB_APP_APPS_SCRIPT_ANDA";
+
+    let serviceLogs = JSON.parse(localStorage.getItem('riwayat_servis_motor_multi')) || [];
+
+    const serviceList = document.getElementById('serviceList');
+    const totalBiayaEl = document.getElementById('totalBiaya');
+    const filterMotor = document.getElementById('filterMotor');
+    const formModal = document.getElementById('formModal');
+    const recordForm = document.getElementById('recordForm');
+    const editIndex = document.getElementById('editIndex');
+    const modalTitle = document.getElementById('modalTitle');
+    const itemsWrapper = document.getElementById('itemsWrapper');
+    const syncStatus = document.getElementById('syncStatus');
+    const btnSave = document.getElementById('btnSave');
+
+    function formatRupiah(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+    }
+
+    // Ambil data online dari Google Sheets
+    async function loadOnlineData() {
+      if (!API_URL || API_URL.includes("ISI_DENGAN")) {
+        syncStatus.textContent = "Mode Offline (Data tersimpan di perangkat ini saja)";
+        renderData();
+        return;
+      }
+      try {
+        syncStatus.textContent = "Sinkronisasi data...";
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          serviceLogs = data;
+          localStorage.setItem('riwayat_servis_motor_multi', JSON.stringify(serviceLogs));
+        }
+        syncStatus.textContent = "Data tersinkron online ✓";
+      } catch (err) {
+        console.error(err);
+        syncStatus.textContent = "Gagal terhubung online (menggunakan memori lokal)";
+      }
+      renderData();
+    }
+
+    // Simpan ke Google Sheets & LocalStorage
+    async function saveOnlineData() {
+      localStorage.setItem('riwayat_servis_motor_multi', JSON.stringify(serviceLogs));
+      renderData();
+
+      if (!API_URL || API_URL.includes("ISI_DENGAN")) return;
+
+      try {
+        syncStatus.textContent = "Menyimpan ke server...";
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(serviceLogs)
+        });
+        syncStatus.textContent = "Tersimpan online ✓";
+      } catch (err) {
+        console.error(err);
+        syncStatus.textContent = "Gagal simpan online (tersimpan lokal)";
+      }
+    }
+
+    function addItemRow(nama = '', qty = 1, harga = '') {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <input type="text" class="part-name" placeholder="Nama Part / Jasa" value="${nama}" required>
+        <input type="number" class="part-qty" placeholder="Jml" value="${qty}" min="1" required>
+        <input type="number" class="part-price" placeholder="Biaya (Rp)" value="${harga}" min="0" required>
+        <button type="button" class="btn-del-item" onclick="this.parentElement.remove()">✕</button>
+      `;
+      itemsWrapper.appendChild(row);
+    }
+
+    function updateMotorDropdown() {
+      const selected = filterMotor.value;
+      const motors = Array.from(new Set(serviceLogs.map(item => item.motor).filter(Boolean)));
+      
+      filterMotor.innerHTML = '<option value="ALL">Semua Motor</option>';
+      motors.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        filterMotor.appendChild(opt);
+      });
+      filterMotor.value = motors.includes(selected) ? selected : 'ALL';
+    }
+
+    function calculateSessionTotal(items) {
+      return (items || []).reduce((sum, item) => sum + (Number(item.qty) * Number(item.harga)), 0);
+    }
+
+    function renderData() {
+      updateMotorDropdown();
+      const currentFilter = filterMotor.value;
+      serviceList.innerHTML = '';
+      let totalAll = 0;
+
+      const filteredData = serviceLogs.filter(session => {
+        return currentFilter === 'ALL' || session.motor === currentFilter;
+      });
+
+      if (filteredData.length === 0) {
+        serviceList.innerHTML = '<div class="empty-state">Belum ada riwayat nota servis.</div>';
+        totalBiayaEl.textContent = formatRupiah(0);
+        return;
+      }
+
+      filteredData.forEach((session) => {
+        const originalIndex = serviceLogs.indexOf(session);
+        const subTotal = calculateSessionTotal(session.items || []);
+        totalAll += subTotal;
+
+        let tableRows = '';
+        (session.items || []).forEach(p => {
+          const itemTotal = Number(p.qty) * Number(p.harga);
+          tableRows += `
+            <tr>
+              <td>${p.nama}</td>
+              <td class="qty-col">${p.qty}x</td>
+              <td class="price-col">${formatRupiah(itemTotal)}</td>
+            </tr>
+          `;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'session-card';
+        card.innerHTML = `
+          <div class="session-top">
+            <span class="motor-badge">${session.motor}</span>
+            <span class="session-total">${formatRupiah(subTotal)}</span>
+          </div>
+          <div class="session-meta">
+            <span>📅 ${session.tanggal}</span>
+            <span>⏱️ ${session.km ? Number(session.km).toLocaleString('id-ID') + ' km' : '-'}</span>
+            ${session.bengkel ? `<span>📍 ${session.bengkel}</span>` : ''}
+          </div>
+
+          <table class="part-table">
+            <thead>
+              <tr>
+                <th>Item / Tindakan</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+
+          ${session.catatan ? `<div class="session-note">${session.catatan}</div>` : ''}
+
+          <div class="card-actions">
+            <button class="btn-action btn-edit" onclick="editData(${originalIndex})">Edit</button>
+            <button class="btn-action btn-delete" onclick="deleteData(${originalIndex})">Hapus</button>
+          </div>
+        `;
+        serviceList.appendChild(card);
+      });
+
+      totalBiayaEl.textContent = formatRupiah(totalAll);
+    }
+
+    function openModal() {
+      recordForm.reset();
+      editIndex.value = "-1";
+      modalTitle.textContent = "Tambah Riwayat Servis";
+      document.getElementById('tglServis').value = new Date().toISOString().split('T')[0];
+      itemsWrapper.innerHTML = '';
+      addItemRow();
+      formModal.classList.add('active');
+    }
+
+    function closeModal() {
+      formModal.classList.remove('active');
+    }
+
+    recordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const index = parseInt(editIndex.value);
+      const itemElements = itemsWrapper.querySelectorAll('.item-row');
+      
+      if (itemElements.length === 0) {
+        alert('Tambahkan minimal 1 item sparepart atau tindakan!');
+        return;
+      }
+
+      btnSave.disabled = true;
+      btnSave.textContent = "Menyimpan...";
+
+      const items = [];
+      itemElements.forEach(row => {
+        items.push({
+          nama: row.querySelector('.part-name').value.trim(),
+          qty: Number(row.querySelector('.part-qty').value) || 1,
+          harga: Number(row.querySelector('.part-price').value) || 0
+        });
+      });
+
+      const sessionData = {
+        motor: document.getElementById('tipeMotor').value.trim(),
+        tanggal: document.getElementById('tglServis').value,
+        km: document.getElementById('kilometer').value ? Number(document.getElementById('kilometer').value) : null,
+        bengkel: document.getElementById('bengkel').value.trim(),
+        catatan: document.getElementById('catatan').value.trim(),
+        items: items
+      };
+
+      if (index === -1) {
+        serviceLogs.unshift(sessionData);
+      } else {
+        serviceLogs[index] = sessionData;
+      }
+
+      closeModal();
+      btnSave.disabled = false;
+      btnSave.textContent = "Simpan Sesi Servis";
+      await saveOnlineData();
+    });
+
+    window.editData = function(index) {
+      const session = serviceLogs[index];
+      document.getElementById('tipeMotor').value = session.motor;
+      document.getElementById('tglServis').value = session.tanggal;
+      document.getElementById('kilometer').value = session.km || '';
+      document.getElementById('bengkel').value = session.bengkel || '';
+      document.getElementById('catatan').value = session.catatan || '';
+      editIndex.value = index;
+
+      itemsWrapper.innerHTML = '';
+      if (session.items && session.items.length > 0) {
+        session.items.forEach(p => addItemRow(p.nama, p.qty, p.harga));
+      } else {
+        addItemRow();
+      }
+
+      modalTitle.textContent = "Edit Riwayat Servis";
+      formModal.classList.add('active');
+    };
+
+    window.deleteData = async function(index) {
+      if (confirm('Yakin ingin menghapus seluruh nota servis ini?')) {
+        serviceLogs.splice(index, 1);
+        await saveOnlineData();
+      }
+    };
+
+    // Jalankan sinkronisasi awal saat web dibuka
+    loadOnlineData();
+  </script>
+</body>
+</html>";
+
+    let serviceLogs = JSON.parse(localStorage.getItem('riwayat_servis_motor_multi')) || [];
+
+    const serviceList = document.getElementById('serviceList');
+    const totalBiayaEl = document.getElementById('totalBiaya');
+    const filterMotor = document.getElementById('filterMotor');
+    const formModal = document.getElementById('formModal');
+    const recordForm = document.getElementById('recordForm');
+    const editIndex = document.getElementById('editIndex');
+    const modalTitle = document.getElementById('modalTitle');
+    const itemsWrapper = document.getElementById('itemsWrapper');
+    const syncStatus = document.getElementById('syncStatus');
+    const btnSave = document.getElementById('btnSave');
+
+    function formatRupiah(num) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+    }
+
+    // Ambil data online dari Google Sheets
+    async function loadOnlineData() {
+      if (!API_URL || API_URL.includes("ISI_DENGAN")) {
+        syncStatus.textContent = "Mode Offline (Data tersimpan di perangkat ini saja)";
+        renderData();
+        return;
+      }
+      try {
+        syncStatus.textContent = "Sinkronisasi data...";
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          serviceLogs = data;
+          localStorage.setItem('riwayat_servis_motor_multi', JSON.stringify(serviceLogs));
+        }
+        syncStatus.textContent = "Data tersinkron online ✓";
+      } catch (err) {
+        console.error(err);
+        syncStatus.textContent = "Gagal terhubung online (menggunakan memori lokal)";
+      }
+      renderData();
+    }
+
+    // Simpan ke Google Sheets & LocalStorage
+    async function saveOnlineData() {
+      localStorage.setItem('riwayat_servis_motor_multi', JSON.stringify(serviceLogs));
+      renderData();
+
+      if (!API_URL || API_URL.includes("ISI_DENGAN")) return;
+
+      try {
+        syncStatus.textContent = "Menyimpan ke server...";
+        await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(serviceLogs)
+        });
+        syncStatus.textContent = "Tersimpan online ✓";
+      } catch (err) {
+        console.error(err);
+        syncStatus.textContent = "Gagal simpan online (tersimpan lokal)";
+      }
+    }
+
+    function addItemRow(nama = '', qty = 1, harga = '') {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <input type="text" class="part-name" placeholder="Nama Part / Jasa" value="${nama}" required>
+        <input type="number" class="part-qty" placeholder="Jml" value="${qty}" min="1" required>
+        <input type="number" class="part-price" placeholder="Biaya (Rp)" value="${harga}" min="0" required>
+        <button type="button" class="btn-del-item" onclick="this.parentElement.remove()">✕</button>
+      `;
+      itemsWrapper.appendChild(row);
+    }
+
+    function updateMotorDropdown() {
+      const selected = filterMotor.value;
+      const motors = Array.from(new Set(serviceLogs.map(item => item.motor).filter(Boolean)));
+      
+      filterMotor.innerHTML = '<option value="ALL">Semua Motor</option>';
+      motors.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        filterMotor.appendChild(opt);
+      });
+      filterMotor.value = motors.includes(selected) ? selected : 'ALL';
+    }
+
+    function calculateSessionTotal(items) {
+      return (items || []).reduce((sum, item) => sum + (Number(item.qty) * Number(item.harga)), 0);
+    }
+
+    function renderData() {
+      updateMotorDropdown();
+      const currentFilter = filterMotor.value;
+      serviceList.innerHTML = '';
+      let totalAll = 0;
+
+      const filteredData = serviceLogs.filter(session => {
+        return currentFilter === 'ALL' || session.motor === currentFilter;
+      });
+
+      if (filteredData.length === 0) {
+        serviceList.innerHTML = '<div class="empty-state">Belum ada riwayat nota servis.</div>';
+        totalBiayaEl.textContent = formatRupiah(0);
+        return;
+      }
+
+      filteredData.forEach((session) => {
+        const originalIndex = serviceLogs.indexOf(session);
+        const subTotal = calculateSessionTotal(session.items || []);
+        totalAll += subTotal;
+
+        let tableRows = '';
+        (session.items || []).forEach(p => {
+          const itemTotal = Number(p.qty) * Number(p.harga);
+          tableRows += `
+            <tr>
+              <td>${p.nama}</td>
+              <td class="qty-col">${p.qty}x</td>
+              <td class="price-col">${formatRupiah(itemTotal)}</td>
+            </tr>
+          `;
+        });
+
+        const card = document.createElement('div');
+        card.className = 'session-card';
+        card.innerHTML = `
+          <div class="session-top">
+            <span class="motor-badge">${session.motor}</span>
+            <span class="session-total">${formatRupiah(subTotal)}</span>
+          </div>
+          <div class="session-meta">
+            <span>📅 ${session.tanggal}</span>
+            <span>⏱️ ${session.km ? Number(session.km).toLocaleString('id-ID') + ' km' : '-'}</span>
+            ${session.bengkel ? `<span>📍 ${session.bengkel}</span>` : ''}
+          </div>
+
+          <table class="part-table">
+            <thead>
+              <tr>
+                <th>Item / Tindakan</th>
+                <th style="text-align: center;">Qty</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+
+          ${session.catatan ? `<div class="session-note">${session.catatan}</div>` : ''}
+
+          <div class="card-actions">
+            <button class="btn-action btn-edit" onclick="editData(${originalIndex})">Edit</button>
+            <button class="btn-action btn-delete" onclick="deleteData(${originalIndex})">Hapus</button>
+          </div>
+        `;
+        serviceList.appendChild(card);
+      });
+
+      totalBiayaEl.textContent = formatRupiah(totalAll);
+    }
+
+    function openModal() {
+      recordForm.reset();
+      editIndex.value = "-1";
+      modalTitle.textContent = "Tambah Riwayat Servis";
+      document.getElementById('tglServis').value = new Date().toISOString().split('T')[0];
+      itemsWrapper.innerHTML = '';
+      addItemRow();
+      formModal.classList.add('active');
+    }
+
+    function closeModal() {
+      formModal.classList.remove('active');
+    }
+
+    recordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const index = parseInt(editIndex.value);
+      const itemElements = itemsWrapper.querySelectorAll('.item-row');
+      
+      if (itemElements.length === 0) {
+        alert('Tambahkan minimal 1 item sparepart atau tindakan!');
+        return;
+      }
+
+      btnSave.disabled = true;
+      btnSave.textContent = "Menyimpan...";
+
+      const items = [];
+      itemElements.forEach(row => {
+        items.push({
+          nama: row.querySelector('.part-name').value.trim(),
+          qty: Number(row.querySelector('.part-qty').value) || 1,
+          harga: Number(row.querySelector('.part-price').value) || 0
+        });
+      });
+
+      const sessionData = {
+        motor: document.getElementById('tipeMotor').value.trim(),
+        tanggal: document.getElementById('tglServis').value,
+        km: document.getElementById('kilometer').value ? Number(document.getElementById('kilometer').value) : null,
+        bengkel: document.getElementById('bengkel').value.trim(),
+        catatan: document.getElementById('catatan').value.trim(),
+        items: items
+      };
+
+      if (index === -1) {
+        serviceLogs.unshift(sessionData);
+      } else {
+        serviceLogs[index] = sessionData;
+      }
+
+      closeModal();
+      btnSave.disabled = false;
+      btnSave.textContent = "Simpan Sesi Servis";
+      await saveOnlineData();
+    });
+
+    window.editData = function(index) {
+      const session = serviceLogs[index];
+      document.getElementById('tipeMotor').value = session.motor;
+      document.getElementById('tglServis').value = session.tanggal;
+      document.getElementById('kilometer').value = session.km || '';
+      document.getElementById('bengkel').value = session.bengkel || '';
+      document.getElementById('catatan').value = session.catatan || '';
+      editIndex.value = index;
+
+      itemsWrapper.innerHTML = '';
+      if (session.items && session.items.length > 0) {
+        session.items.forEach(p => addItemRow(p.nama, p.qty, p.harga));
+      } else {
+        addItemRow();
+      }
+
+      modalTitle.textContent = "Edit Riwayat Servis";
+      formModal.classList.add('active');
+    };
+
+    window.deleteData = async function(index) {
+      if (confirm('Yakin ingin menghapus seluruh nota servis ini?')) {
+        serviceLogs.splice(index, 1);
+        await saveOnlineData();
+      }
+    };
+
+    // Jalankan sinkronisasi awal saat web dibuka
+    loadOnlineData();
+  </script>
+</body>
+</html>
